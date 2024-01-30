@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, time
 import json
-from nba_api.stats.endpoints import commonplayerinfo, leagueseasonmatchups, leaguegamefinder, teamgamelogs, playergamelogs, teamdashlineups, leaguedashplayerbiostats
-from nba_api.stats.static import players, teams
+from nba_api.stats.endpoints import commonplayerinfo, leagueseasonmatchups, leaguegamefinder, teamgamelogs, playergamelogs, teamdashlineups, leaguedashplayerbiostats, leaguedashteamstats, boxscoretraditionalv2
+from nba_api.stats.static import players, teams, seasons
 from collections import Counter, defaultdict
 import pandas as pd
 from openpyxl.utils import get_column_letter
@@ -21,6 +21,10 @@ def get_player_ids(player_names):
     # print(player_ids)
     return player_ids
 
+def get_starters(playerstats, team_id):
+    player_names = [player['PLAYER_NAME'] for player in playerstats if player['TEAM_ID'] == team_id and player['START_POSITION'] != '']
+    return ', '.join(player_names)
+
 def check_games(players_ids, player_data, games):
     games_counter = Counter()
     for player_id in players_ids:
@@ -37,7 +41,6 @@ while True:
     season = input("Enter the season in the format 'YYYY-YY': ")
 
     verbose_output = input("Do you want verbose output for player activity of each game (y/n)?: ")
-
 
     # Assuming games_data and player_data are your datasets
     games_data = teamgamelogs.TeamGameLogs(season_nullable=season).get_normalized_json()
@@ -64,11 +67,14 @@ while True:
                 games_counter[game_id] += 1
                 if games_counter[game_id] == len(player_ids):
                     games_dict[game_id] = game
-                    lineups[game_id] = teamdashlineups.TeamDashLineups(team_id=game["TEAM_ID"], game_id_nullable=game_id).get_normalized_dict()["Lineups"][0]["GROUP_NAME"]
+                    starters = get_starters(boxscoretraditionalv2.BoxScoreTraditionalV2(game_id=game_id).get_normalized_dict()["PlayerStats"], game["TEAM_ID"])
+                    lineups[game_id] = starters
 
+    # with open('lineups.json', 'w') as f:
+    #     json.dump(temp_lineups_dict, f)
 
-    with open('games_data.json', 'w') as f:
-        json.dump(games_data, f)
+    # with open('games_data.json', 'w') as f:
+    #     json.dump(games_data, f)
 
     breakdown = []
     wins = 0
