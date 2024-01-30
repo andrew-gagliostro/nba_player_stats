@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, time
 import json
-from nba_api.stats.endpoints import commonplayerinfo, leagueseasonmatchups, leaguegamefinder, teamgamelogs, playergamelogs, teamdashlineups
+from nba_api.stats.endpoints import commonplayerinfo, leagueseasonmatchups, leaguegamefinder, teamgamelogs, playergamelogs, teamdashlineups, leaguedashplayerbiostats
 from nba_api.stats.static import players, teams
 from collections import Counter, defaultdict
 import pandas as pd
@@ -10,9 +10,13 @@ from openpyxl.styles import PatternFill, Font, Alignment
 def get_player_ids(player_names):
     target_players = [name.strip() for name in player_names.split(",")]
     player_ids = dict()
-    for player in players.get_active_players():
-        if player['full_name'] in target_players:
-            player_ids[player['full_name']] = player['id']
+    players = leaguedashplayerbiostats.LeagueDashPlayerBioStats().get_normalized_dict()["LeagueDashPlayerBioStats"]
+    # with open('all_players.json', 'w') as f:
+    #     json.dump(players, f)
+
+    for player in players:
+        if player['PLAYER_NAME'] in target_players:
+            player_ids[player['PLAYER_NAME']] = player['PLAYER_ID']
 
     # print(player_ids)
     return player_ids
@@ -63,8 +67,8 @@ while True:
                     lineups[game_id] = teamdashlineups.TeamDashLineups(team_id=game["TEAM_ID"], game_id_nullable=game_id).get_normalized_dict()["Lineups"][0]["GROUP_NAME"]
 
 
-    # with open('lineups.json', 'w') as f:
-    #     json.dump(lineups, f)
+    with open('games_data.json', 'w') as f:
+        json.dump(games_data, f)
 
     breakdown = []
     wins = 0
@@ -90,6 +94,7 @@ while True:
     sorted_games = sorted(breakdown, key=get_date)
     filename_excel = "".join(player_names.split(", ")).replace(" ", "") + datetime.now().strftime("%m-%d-%Y") + ".xlsx"
     df_columns = ["Date", "Matchup", "Win/Loss", "Starters"]
+
 
     if verbose_output.lower() == 'y':
         additional_columns = [f"{name} Game Stats" for name in player_ids.keys()]
