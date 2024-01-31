@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, time
 import json
 from nba_api.stats.endpoints import commonplayerinfo, leagueseasonmatchups, leaguegamefinder, teamgamelogs, playergamelogs, teamdashlineups, leaguedashplayerbiostats, leaguedashteamstats, boxscoretraditionalv2
-from nba_api.stats.static import players, teams, seasons
+from nba_api.stats.static import players, teams
 from collections import Counter, defaultdict
 import pandas as pd
 from openpyxl.utils import get_column_letter
@@ -22,8 +22,15 @@ def get_player_ids(player_names):
     return player_ids
 
 def get_starters(playerstats, team_id):
-    player_names = [player['PLAYER_NAME'] for player in playerstats if player['TEAM_ID'] == team_id and player['START_POSITION'] != '']
-    return ', '.join(player_names)
+    print(playerstats)
+    player_names = [f"{player['PLAYER_NAME']}: {player['START_POSITION']}" for player in playerstats if player['TEAM_ID'] == team_id and player['START_POSITION'] != '']
+    out = ""
+    for (i, player) in enumerate(player_names):
+        if i == len(player_names) - 1:
+            out += player
+        else:
+            out += player + "\n"
+    return out
 
 def check_games(players_ids, player_data, games):
     games_counter = Counter()
